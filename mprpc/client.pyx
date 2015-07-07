@@ -36,6 +36,7 @@ cdef class RPCClient:
     cdef int _msg_id
     cdef _timeout
     cdef _socket
+    cdef _tcp_no_delay
     cdef _packer
     cdef _unpacker
 
@@ -176,7 +177,8 @@ class RPCPoolClient(RPCClient, Connection):
             self._lifetime = None
 
         RPCClient.__init__(self, host, port, timeout=timeout, lazy=True,
-                           pack_encoding=pack_encoding, unpack_encoding=unpack_encoding, tcp_no_delay=False, use_bin_type=use_bin_type)
+                           pack_encoding=pack_encoding, unpack_encoding=unpack_encoding,
+                           tcp_no_delay=tcp_no_delay, use_bin_type=use_bin_type)
 
     def is_expired(self):
         """Returns whether the connection has been expired.
