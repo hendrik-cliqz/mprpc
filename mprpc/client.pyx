@@ -107,6 +107,9 @@ cdef class RPCClient:
         cdef bytes data
         self._socket.sendall(req)
 
+        # ensure unpacker has no garbage from a previous run
+        self._unpacker.reset()
+
         while True:
             data = self._socket.recv(SOCKET_RECV_SIZE)
             if not data:
@@ -117,6 +120,10 @@ cdef class RPCClient:
                 break
             except StopIteration:
                 continue
+
+        if type(response) != tuple:
+            logging.debug('Protocol error, received unexpected data: {}'.format(data))
+            raise RPCProtocolError('Invalid protocol')
 
         return self._parse_response(response)
 
@@ -135,11 +142,11 @@ cdef class RPCClient:
         cdef int msg_id
         (_, msg_id, error, result) = response
 
-        if msg_id != self._msg_id:
-            raise RPCError('Invalid Message ID')
-
         if error:
             raise RPCError(str(error))
+
+        if msg_id != self._msg_id:
+            raise RPCError('Invalid Message ID')
 
         return result
 

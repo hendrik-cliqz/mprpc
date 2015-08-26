@@ -69,6 +69,12 @@ cdef class RPCServer:
             except StopIteration:
                 continue
 
+            if type(req) != tuple:
+                self._send_error("Invalid protocol", -1, conn)
+                # reset unpacker as it might have garbage data
+                self._unpacker.reset()
+                continue
+
             (msg_id, method, args) = self._parse_request(req)
 
             try:
