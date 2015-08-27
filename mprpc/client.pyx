@@ -146,7 +146,7 @@ cdef class RPCClient:
             raise RPCError(str(error))
 
         if msg_id != self._msg_id:
-            raise RPCError('Invalid Message ID')
+            raise RPCError('Invalid Message ID got: {} expected: {}'.format(msg_id, self._msg_id))
 
         return result
 
