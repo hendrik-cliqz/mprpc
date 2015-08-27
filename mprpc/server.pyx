@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gevent.socket
+import logging
 import msgpack
 from gevent.coros import Semaphore
 
@@ -83,6 +84,7 @@ cdef class RPCServer:
 
             if type(req) != tuple:
                 self._send_error("Invalid protocol", -1, conn)
+                logging.debug('Protocol error, received unexpected data: {}'.format(data))
                 continue
 
             (msg_id, method, args) = self._parse_request(req)
