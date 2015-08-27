@@ -55,10 +55,18 @@ cdef class RPCServer:
 
     def _run(self, _RPCConnection conn):
         cdef bytes data
-        cdef tuple req, args
+        cdef object req
+        cdef tuple args
         cdef int msg_id
+        cdef bint begin_new_message
+
+        begin_new_message = True
 
         while True:
+            if begin_new_message:
+                # reset unpacker as this is the beginning of a message
+                self._unpacker.reset()
+
             data = conn.recv(SOCKET_RECV_SIZE)
             if not data:
                 break
@@ -67,12 +75,14 @@ cdef class RPCServer:
             try:
                 req = self._unpacker.next()
             except StopIteration:
+                begin_new_message = False
                 continue
+
+            # reset begin_new_message
+            begin_new_message = True
 
             if type(req) != tuple:
                 self._send_error("Invalid protocol", -1, conn)
-                # reset unpacker as it might have garbage data
-                self._unpacker.reset()
                 continue
 
             (msg_id, method, args) = self._parse_request(req)
