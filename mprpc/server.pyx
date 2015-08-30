@@ -4,7 +4,6 @@
 import gevent.socket
 import logging
 import msgpack
-from gevent.coros import Semaphore
 
 from constants import MSGPACKRPC_REQUEST, MSGPACKRPC_RESPONSE, SOCKET_RECV_SIZE
 from exceptions import MethodNotFoundError, RPCProtocolError
@@ -37,53 +36,42 @@ cdef class RPCServer:
     cdef _unpacker
 
     def __init__(self, *args, **kwargs):
-        pack_encoding = kwargs.pop('pack_encoding', 'utf-8')
-        unpack_encoding = kwargs.pop('unpack_encoding', 'utf-8')
-        use_bin_type = kwargs.pop('use_bin_type', False)
+        self.pack_encoding = kwargs.pop('pack_encoding', 'utf-8')
+        self.unpack_encoding = kwargs.pop('unpack_encoding', 'utf-8')
+        self.use_bin_type = kwargs.pop('use_bin_type', False)
         self._tcp_no_delay = kwargs.pop('tcp_no_delay', False)
 
-        self._packer = msgpack.Packer(encoding=pack_encoding, use_bin_type=use_bin_type)
-        self._unpacker = msgpack.Unpacker(encoding=unpack_encoding,
-                                          use_list=False)
-
         if args and isinstance(args[0], gevent.socket.socket):
-            self._run(_RPCConnection(args[0]))
+            self.__call__(args[0], None)
 
     def __call__(self, sock, _):
-        if self._tcp_no_delay:
-            sock.setsockopt(gevent.socket.IPPROTO_TCP, gevent.socket.TCP_NODELAY, 1)
-        self._run(_RPCConnection(sock))
-
-    def _run(self, _RPCConnection conn):
         cdef bytes data
         cdef object req
         cdef tuple args
         cdef int msg_id
         cdef bint begin_new_message
 
-        begin_new_message = True
+        if self._tcp_no_delay:
+            sock.setsockopt(gevent.socket.IPPROTO_TCP, gevent.socket.TCP_NODELAY, 1)
+
+        unpacker = msgpack.Unpacker(encoding=self.unpack_encoding,
+                                          use_list=False)
+        packer = msgpack.Packer(encoding=self.pack_encoding, use_bin_type=self.use_bin_type)
 
         while True:
-            if begin_new_message:
-                # reset unpacker as this is the beginning of a message
-                self._unpacker.reset()
-
-            data = conn.recv(SOCKET_RECV_SIZE)
+            data = sock.recv(SOCKET_RECV_SIZE)
             if not data:
                 break
 
-            self._unpacker.feed(data)
+            unpacker.feed(data)
             try:
-                req = self._unpacker.next()
+                req = unpacker.next()
             except StopIteration:
-                begin_new_message = False
                 continue
 
-            # reset begin_new_message
-            begin_new_message = True
-
             if type(req) != tuple:
-                self._send_error("Invalid protocol", -1, conn)
+                msg = (MSGPACKRPC_RESPONSE, -1, "Invalid protocol", None)
+                sock.sendall(packer.pack(msg))
                 logging.debug('Protocol error, received unexpected data: {}'.format(data))
                 continue
 
@@ -93,10 +81,13 @@ cdef class RPCServer:
                 ret = method(*args)
 
             except Exception, e:
-                self._send_error(str(e), msg_id, conn)
+                logging.debug('Protocol error, received unexpected data: {}'.format(data))
+                msg = (MSGPACKRPC_RESPONSE, msg_id, str(e), None)
+                sock.sendall(packer.pack(msg))
 
             else:
-                self._send_result(ret, msg_id, conn)
+                msg = (MSGPACKRPC_RESPONSE, msg_id, None, ret)
+                sock.sendall(packer.pack(msg))
 
     cdef tuple _parse_request(self, tuple req):
         if (len(req) != 4 or req[0] != MSGPACKRPC_REQUEST):
@@ -118,37 +109,3 @@ cdef class RPCServer:
             raise MethodNotFoundError('Method is not callable: %s', method_name)
 
         return (msg_id, method, args)
-
-    cdef _send_result(self, object result, int msg_id, _RPCConnection conn):
-        msg = (MSGPACKRPC_RESPONSE, msg_id, None, result)
-        conn.send(self._packer.pack(msg))
-
-    cdef _send_error(self, str error, int msg_id, _RPCConnection conn):
-        msg = (MSGPACKRPC_RESPONSE, msg_id, error, None)
-        conn.send(self._packer.pack(msg))
-
-
-cdef class _RPCConnection:
-    cdef _socket
-    cdef _send_lock
-
-    def __init__(self, socket):
-        self._socket = socket
-        self._send_lock = Semaphore()
-
-    cdef recv(self, int buf_size):
-        return self._socket.recv(buf_size)
-
-    cdef send(self, str msg):
-        self._send_lock.acquire()
-        try:
-            self._socket.sendall(msg)
-
-        finally:
-            self._send_lock.release()
-
-    def __del__(self):
-        try:
-            self._socket.close()
-        except:
-            pass
