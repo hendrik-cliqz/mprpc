@@ -40,6 +40,7 @@ cdef class RPCServer:
         self.unpack_encoding = kwargs.pop('unpack_encoding', 'utf-8')
         self.use_bin_type = kwargs.pop('use_bin_type', False)
         self._tcp_no_delay = kwargs.pop('tcp_no_delay', False)
+        self._methods = {}
 
         if args and isinstance(args[0], gevent.socket.socket):
             self.__call__(args[0], None)
@@ -98,14 +99,19 @@ cdef class RPCServer:
 
         (_, msg_id, method_name, args) = req
 
-        if method_name.startswith('_'):
-            raise MethodNotFoundError('Method not found: %s', method_name)
+        method = self._methods.get(method_name, None)
 
-        if not hasattr(self, method_name):
-            raise MethodNotFoundError('Method not found: %s', method_name)
+        if method is None:
+            if method_name.startswith('_'):
+                raise MethodNotFoundError('Method not found: %s', method_name)
 
-        method = getattr(self, method_name)
-        if not hasattr(method, '__call__'):
-            raise MethodNotFoundError('Method is not callable: %s', method_name)
+            if not hasattr(self, method_name):
+                raise MethodNotFoundError('Method not found: %s', method_name)
+
+            method = getattr(self, method_name)
+            if not hasattr(method, '__call__'):
+                raise MethodNotFoundError('Method is not callable: %s', method_name)
+
+            self._methods[method_name] = method
 
         return (msg_id, method, args)
