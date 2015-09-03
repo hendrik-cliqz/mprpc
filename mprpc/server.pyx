@@ -32,9 +32,6 @@ cdef class RPCServer:
         >>> server.serve_forever()
     """
 
-    cdef _packer
-    cdef _unpacker
-
     def __init__(self, *args, **kwargs):
         self.pack_encoding = kwargs.pop('pack_encoding', 'utf-8')
         self.unpack_encoding = kwargs.pop('unpack_encoding', 'utf-8')
