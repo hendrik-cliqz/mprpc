@@ -35,17 +35,21 @@ cdef class RPCClient:
     cdef int _port
     cdef int _msg_id
     cdef _timeout
+    cdef _connect_timeout
     cdef _socket
     cdef _tcp_no_delay
+    cdef _keep_alive
     cdef _packer
     cdef _unpacker
 
     def __init__(self, host, port, timeout=None, lazy=False,
-                 pack_encoding='utf-8', unpack_encoding='utf-8', tcp_no_delay=False, use_bin_type=False):
+                 pack_encoding='utf-8', unpack_encoding='utf-8', tcp_no_delay=False, use_bin_type=False,
+                 connect_timeout = None, keep_alive = False):
         self._host = host
         self._port = port
         self._timeout = timeout
-
+        self._connect_timeout = connect_timeout or timeout
+        self._keep_alive = keep_alive
         self._msg_id = 0
         self._socket = None
         self._tcp_no_delay = tcp_no_delay
@@ -68,14 +72,26 @@ cdef class RPCClient:
         logging.debug('openning a msgpackrpc connection')
 
         # set timeout already when connecting
-        if self._timeout:
-            self._socket = socket.create_connection((self._host, self._port), self._timeout)
-        else:
-            self._socket = socket.create_connection((self._host, self._port))
+        family, socktype, proto, canonname, socket_address = socket.getaddrinfo(self._host, self._port, 0, socket.SOCK_STREAM)
 
-        # set TCP NODELAY
+        self._socket = socket.socket(family, socktype, proto)
+
+        # set TCP NODELAY if configured
         if self._tcp_no_delay:
             self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+        # set TCP_KEEPALIVE if configured
+        if self._keepalive:
+            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+
+        # set the socket_connect_timeout before we connect
+        self._socket.settimeout(self._connect_timeout)
+
+        # connect
+        self._socket.connect(socket_address)
+
+        # set the socket_timeout now that we're connected
+        self._socket.settimeout(self._timeout)
 
     def close(self):
         """Closes the connection."""
