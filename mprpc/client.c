@@ -795,7 +795,6 @@ static char __pyx_k_qualname[] = "__qualname__";
 static char __pyx_k_use_list[] = "use_list";
 static char __pyx_k_constants[] = "constants";
 static char __pyx_k_exception[] = "exception";
-static char __pyx_k_keepalive[] = "_keepalive";
 static char __pyx_k_metaclass[] = "__metaclass__";
 static char __pyx_k_reconnect[] = "reconnect";
 static char __pyx_k_Connection[] = "Connection";
@@ -893,7 +892,6 @@ static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_init;
 static PyObject *__pyx_n_s_is_expired;
 static PyObject *__pyx_n_s_keep_alive;
-static PyObject *__pyx_n_s_keepalive;
 static PyObject *__pyx_n_s_lazy;
 static PyObject *__pyx_n_s_lifetime;
 static PyObject *__pyx_n_s_lifetime_2;
@@ -1804,19 +1802,16 @@ static PyObject *__pyx_pf_5mprpc_6client_9RPCClient_4open(struct __pyx_obj_5mprp
   /* "mprpc/client.pyx":88
  * 
  *         # set TCP_KEEPALIVE if configured
- *         if self._keepalive:             # <<<<<<<<<<<<<<
+ *         if self._keep_alive:             # <<<<<<<<<<<<<<
  *             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_keepalive); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 88; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 88; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_self->_keep_alive); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 88; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__pyx_t_1) {
 
     /* "mprpc/client.pyx":89
  *         # set TCP_KEEPALIVE if configured
- *         if self._keepalive:
+ *         if self._keep_alive:
  *             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)             # <<<<<<<<<<<<<<
  * 
  *         # set the socket_connect_timeout before we connect
@@ -4353,7 +4348,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_init, __pyx_k_init, sizeof(__pyx_k_init), 0, 0, 1, 1},
   {&__pyx_n_s_is_expired, __pyx_k_is_expired, sizeof(__pyx_k_is_expired), 0, 0, 1, 1},
   {&__pyx_n_s_keep_alive, __pyx_k_keep_alive, sizeof(__pyx_k_keep_alive), 0, 0, 1, 1},
-  {&__pyx_n_s_keepalive, __pyx_k_keepalive, sizeof(__pyx_k_keepalive), 0, 0, 1, 1},
   {&__pyx_n_s_lazy, __pyx_k_lazy, sizeof(__pyx_k_lazy), 0, 0, 1, 1},
   {&__pyx_n_s_lifetime, __pyx_k_lifetime, sizeof(__pyx_k_lifetime), 0, 0, 1, 1},
   {&__pyx_n_s_lifetime_2, __pyx_k_lifetime_2, sizeof(__pyx_k_lifetime_2), 0, 0, 1, 1},
