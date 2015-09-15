@@ -85,7 +85,7 @@ cdef class RPCClient:
             self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         # set TCP_KEEPALIVE if configured
-        if self._keepalive:
+        if self._keep_alive:
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         # set the socket_connect_timeout before we connect
