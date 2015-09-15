@@ -197,7 +197,8 @@ class RPCPoolClient(RPCClient, Connection):
     """
 
     def __init__(self, host, port, timeout=None, lifetime=None,
-                 pack_encoding='utf-8', unpack_encoding='utf-8', tcp_no_delay=False, use_bin_type=False):
+                 pack_encoding='utf-8', unpack_encoding='utf-8', tcp_no_delay=False, use_bin_type=False,
+                 connect_timeout = None, keep_alive = False):
 
         if lifetime:
             assert lifetime > 0, 'Lifetime must be a positive value'
@@ -207,7 +208,8 @@ class RPCPoolClient(RPCClient, Connection):
 
         RPCClient.__init__(self, host, port, timeout=timeout, lazy=True,
                            pack_encoding=pack_encoding, unpack_encoding=unpack_encoding,
-                           tcp_no_delay=tcp_no_delay, use_bin_type=use_bin_type)
+                           tcp_no_delay=tcp_no_delay, use_bin_type=use_bin_type,
+                           connect_timeout = connect_timeout, keep_alive = keep_alive)
 
     def is_expired(self):
         """Returns whether the connection has been expired.
