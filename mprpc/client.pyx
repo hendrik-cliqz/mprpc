@@ -72,7 +72,11 @@ cdef class RPCClient:
         logging.debug('openning a msgpackrpc connection')
 
         # set timeout already when connecting
-        family, socktype, proto, canonname, socket_address = socket.getaddrinfo(self._host, self._port, 0, socket.SOCK_STREAM)
+        res = socket.getaddrinfo(self._host, self._port, 0, socket.SOCK_STREAM)
+        if len(res) == 0:
+            socket.error("socket.getaddrinfo returned an empty list")
+
+        family, socktype, proto, canonname, socket_address = res[0]
 
         self._socket = socket.socket(family, socktype, proto)
 
